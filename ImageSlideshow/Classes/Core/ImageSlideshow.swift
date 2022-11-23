@@ -26,6 +26,8 @@ public protocol ImageSlideshowDelegate: class {
     ///
     /// - Parameter imageSlideshow: image slideshow instance
     @objc optional func imageSlideshowDidEndDecelerating(_ imageSlideshow: ImageSlideshow)
+    
+    @objc optional func imageSlideDidSelected(_ imageSlideshow: ImageSlideshow, page: Int)
 }
 
 /** 
@@ -237,9 +239,6 @@ open class ImageSlideshow: UIView {
     fileprivate func initialize() {
         autoresizesSubviews = true
         clipsToBounds = true
-        if #available(iOS 13.0, *) {
-            backgroundColor = .systemBackground
-        }
 
         // scroll view configuration
         scrollView.frame = CGRect(x: 0, y: 0, width: frame.size.width, height: frame.size.height - 50.0)
@@ -324,7 +323,10 @@ open class ImageSlideshow: UIView {
         var i = 0
         for image in scrollViewImages {
             let item = ImageSlideshowItem(image: image, zoomEnabled: zoomEnabled, activityIndicator: activityIndicator?.create(), maximumScale: maximumScale)
+            let tap = UITapGestureRecognizer(target: self, action: #selector(self.handleBannerOnTap(_:)))
             item.imageView.contentMode = contentScaleMode
+            item.tag = i
+            item.addGestureRecognizer(tap)
             slideshowItems.append(item)
             scrollView.addSubview(item)
             i += 1
@@ -338,6 +340,10 @@ open class ImageSlideshow: UIView {
         }
 
         loadImages(for: scrollViewPage)
+    }
+    
+    @objc func handleBannerOnTap(_ sender: UITapGestureRecognizer) {
+        delegate?.imageSlideDidSelected?(self, page: (sender.view?.tag ?? 1) - 1)
     }
 
     private func loadImages(for scrollViewPage: Int) {
